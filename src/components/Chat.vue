@@ -17,49 +17,67 @@
       </div>
     </header>
 
-    <!-- 未登录提示 -->
-    <div v-if="!isLoggedIn" class="not-logged-in">
-      ⚠️ 您未登录，会话不会被存储
-    </div>
-
-    <!-- 聊天窗口 -->
-    <div class="chat-container" ref="chatContainer">
-      <div
-        v-for="(msg, index) in messages"
-        :key="index"
-        :class="['chat-message', msg.role === '用户' ? 'user' : 'ai']"
-      >
-        <div class="message-content" v-html="msg.text"></div>
+    <!-- 主体内容 -->
+    <div class="chat-body">
+      <!-- 左侧历史会话 -->
+      <div class="chat-sidebar">
+        <button class="new-session-btn" @click="createNewSession">+ 新建对话</button>
+        <div 
+          v-for="session in sessions" 
+          :key="session.id" 
+          :class="['session-item', {active: session.id === currentSessionId}]"
+          @click="loadSession(session)"
+        >
+          {{ session.title || '新对话' }}
+        </div>
       </div>
-    </div>
 
-    <!-- 输入区域 -->
-    <div class="chat-input-area">
-      <button @click="triggerFileInput">上传文件</button>
-      <input
-        ref="fileInput"
-        type="file"
-        multiple
-        style="display: none"
-        @change="handleFileUpload"
-      />
-      <input
-        v-model="inputText"
-        @keyup.enter="sendQuestion"
-        placeholder="输入消息..."
-      />
-      <button @click="sendQuestion">发送</button>
-    </div>
+      <!-- 右侧聊天主区 -->
+      <div class="chat-main">
+        <div v-if="!isLoggedIn" class="not-logged-in">
+          ⚠️ 您未登录，会话不会被存储
+        </div>
 
-    <!-- 快速提示 -->
-    <div class="quick-prompts">
-      <button
-        v-for="(prompt, i) in prompts"
-        :key="i"
-        @click="fillPrompt(prompt)"
-      >
-        {{ prompt }}
-      </button>
+        <!-- 聊天窗口 -->
+        <div class="chat-container" ref="chatContainer">
+          <div
+            v-for="(msg, index) in messages"
+            :key="index"
+            :class="['chat-message', msg.role === '用户' ? 'user' : 'ai']"
+          >
+            <div class="message-content" v-html="msg.text"></div>
+          </div>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="chat-input-area">
+          <button @click="triggerFileInput">上传文件</button>
+          <input
+            ref="fileInput"
+            type="file"
+            multiple
+            style="display: none"
+            @change="handleFileUpload"
+          />
+          <input
+            v-model="inputText"
+            @keyup.enter="sendQuestion"
+            placeholder="输入消息..."
+          />
+          <button @click="sendQuestion">发送</button>
+        </div>
+
+        <!-- 快速提示 -->
+        <div class="quick-prompts">
+          <button
+            v-for="(prompt, i) in prompts"
+            :key="i"
+            @click="fillPrompt(prompt)"
+          >
+            {{ prompt }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -87,15 +105,23 @@ const user = ref({ id: null, username: "" });
 const isLoggedIn = ref(false);
 const showUserMenu = ref(false);
 
-// 检查登录状态
-onMounted(() => {
+const sessions = ref([]);
+const currentSessionId = ref(null);
+const sessionCreatedInDB = ref(false); // 是否已保存到数据库
+
+// ------------------ 生命周期 ------------------
+onMounted(async () => {
   const storedUser = JSON.parse(localStorage.getItem("user"));
   if (storedUser) {
     user.value = storedUser;
     isLoggedIn.value = true;
   }
+
+  await loadSessions();
+  createNewSession(); // 前端新建临时会话，不立刻存DB
 });
 
+// ------------------ 滚动 ------------------
 const scrollToBottom = () => {
   nextTick(() => {
     if (chatContainer.value) {
@@ -104,80 +130,115 @@ const scrollToBottom = () => {
   });
 };
 
+// ------------------ 快速提示 ------------------
 const fillPrompt = (prompt) => {
   inputText.value = prompt;
 };
 
-const triggerFileInput = () => {
-  fileInput.value.click();
-};
-
+// ------------------ 文件上传 ------------------
+const triggerFileInput = () => fileInput.value.click();
 const handleFileUpload = (event) => {
   const files = event.target.files;
   if (files && files.length > 0) {
     selectedFiles.value = Array.from(files);
-    const fileNames = selectedFiles.value.map((f) => f.name).join(", ");
+    const fileNames = selectedFiles.value.map(f => f.name).join(", ");
     messages.value.push({ role: "系统", text: `📎 已选择文件：${fileNames}` });
     scrollToBottom();
   }
 };
 
-const sendQuestion = async () => {
-  if (!inputText.value && selectedFiles.value.length === 0) return;
+// ------------------ 会话管理 ------------------
+const loadSessions = async () => {
+  if (!isLoggedIn.value) return;
+  const res = await axios.get("http://localhost:8080/api/chat/sessions", {
+    params: { userId: user.value.id },
+  });
+  sessions.value = res.data.sort((a,b)=>new Date(b.updatedTime)-new Date(a.updatedTime));
+};
 
-  messages.value.push({ role: "用户", text: inputText.value || "（发送文件）" });
+const createNewSession = () => {
+  const newSession = { id: Date.now(), title: "新对话", userId: isLoggedIn.value ? user.value.id : null };
+  sessions.value.unshift(newSession);
+  currentSessionId.value = newSession.id;
+  messages.value = [];
+  sessionCreatedInDB.value = false; // 尚未保存到数据库
+};
+
+const loadSession = async (session) => {
+  currentSessionId.value = session.id;
+  sessionCreatedInDB.value = true;
+
+  if (isLoggedIn.value) {
+    const res = await axios.get(`http://localhost:8080/api/chat/session/${session.id}`);
+    messages.value = res.data.flatMap(log => [
+      { role: "用户", text: log.question },
+      { role: "AI", text: log.answer }
+    ]);
+  } else {
+    messages.value = [];
+  }
   scrollToBottom();
+};
 
+// ------------------ 发送消息 ------------------
+const sendQuestion = async () => {
+  if (!inputText.value) return;
+  messages.value.push({ role: "用户", text: inputText.value });
+  scrollToBottom();
 
   try {
     let res;
-    if (selectedFiles.value.length > 0) {
-      const formData = new FormData();
-      formData.append("text", inputText.value || "请分析这个文件");
-      selectedFiles.value.forEach((file) => formData.append("files", file));
 
-      res = await axios.post("http://localhost:8000/ask_with_file", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+    // 如果是临时会话，首次发送消息时创建DB记录
+    if (isLoggedIn.value && !sessionCreatedInDB.value) {
+      const createRes = await axios.post("http://localhost:8080/api/chat/session", null, {
+        params: { userId: user.value.id, title: inputText.value.slice(0,10) }
       });
+      currentSessionId.value = createRes.data.id;
+      sessionCreatedInDB.value = true;
+      await loadSessions();
+    }
 
-      selectedFiles.value = [];
-      fileInput.value.value = "";
+    if (isLoggedIn.value) {
+      res = await axios.post("http://localhost:8080/api/chat/send", null, {
+        params: {
+          userId: user.value.id,
+          sessionId: currentSessionId.value,
+          text: inputText.value,
+        },
+      });
     } else {
-      res = await axios.post("http://localhost:8000/ask", {
-        text: inputText.value,
-      });
+      res = await axios.post("http://localhost:8000/ask", { text: inputText.value });
     }
 
     messages.value.push({ role: "AI", text: res.data.answer });
+    scrollToBottom();
   } catch (error) {
     messages.value.push({ role: "系统", text: "❌ 问答服务出错了" });
     console.error(error);
   }
 
   inputText.value = "";
-  scrollToBottom();
 };
 
-// 导航栏操作
-const toggleUserMenu = () => {
-  showUserMenu.value = !showUserMenu.value;
-};
-
-const goToSettings = () => {
-  router.push("/settings");
-};
-
+// ------------------ 导航栏 ------------------
+const toggleUserMenu = () => { showUserMenu.value = !showUserMenu.value; };
+const goToSettings = () => { router.push("/settings"); };
 const logout = () => {
   localStorage.removeItem("user");
   isLoggedIn.value = false;
-  user.value = { id: null, username: "" };
+  user.value = { id:null, username:"" };
+  createNewSession(); // 登出后新建前端临时会话
 };
 </script>
 
 <style scoped>
+html, body, #app, .chat-app {
+  height: 100%;
+  margin: 0;
+}
+
 .chat-app {
-  max-width: 700px;
-  margin: auto;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -185,17 +246,13 @@ const logout = () => {
 
 .navbar {
   padding: 8px;
-  text-align: center;
-  font-weight: bold;
   background-color: #a3d5ff;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.nav-right {
-  position: relative;
-}
+.nav-right { position: relative; }
 
 .user-menu {
   position: absolute;
@@ -208,6 +265,42 @@ const logout = () => {
   flex-direction: column;
 }
 
+.chat-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.chat-sidebar {
+  width: 220px;
+  border-right: 1px solid #ccc;
+  padding: 8px;
+  overflow-y: auto;
+  background: #f7f7f7;
+}
+
+.new-session-btn {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 6px;
+}
+
+.session-item {
+  padding: 6px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.session-item.active { background-color: #a3d5ff; }
+
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .not-logged-in {
   text-align: center;
   color: #ff6600;
@@ -218,26 +311,22 @@ const logout = () => {
   flex: 1;
   overflow-y: auto;
   padding: 10px;
-  background: #ffffff;
+  background: #fff;
 }
 
 .chat-message {
   margin-bottom: 8px;
 }
 
-.chat-message.user {
-  text-align: right;
-}
-
-.chat-message.ai {
-  text-align: left;
-}
+.chat-message.user { text-align: right; }
+.chat-message.ai { text-align: left; }
 
 .message-content {
   display: inline-block;
   padding: 6px 10px;
   border-radius: 6px;
   max-width: 60%;
+  word-break: break-word;
 }
 
 .chat-input-area {
@@ -246,10 +335,7 @@ const logout = () => {
   padding: 8px;
 }
 
-.chat-input-area input[type="text"] {
-  flex: 1;
-  padding: 6px;
-}
+.chat-input-area input[type="text"] { flex: 1; padding: 6px; }
 
 .quick-prompts {
   display: flex;
