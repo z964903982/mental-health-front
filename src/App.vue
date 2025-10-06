@@ -1,7 +1,14 @@
 <template>
-  <Chat />
+  <router-view></router-view>
 </template>
 
 <script setup>
-import Chat from './components/Chat.vue'
 </script>
+
+<style>
+/* 可选全局样式 */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+</style>

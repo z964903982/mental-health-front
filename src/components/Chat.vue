@@ -3,7 +3,24 @@
     <!-- 导航栏 -->
     <header class="navbar">
       心理健康咨询小助手
+      <div class="nav-right">
+        <template v-if="isLoggedIn">
+          <span @click="toggleUserMenu">你好，{{ user.username }}</span>
+          <div v-if="showUserMenu" class="user-menu">
+            <button @click="goToSettings">设置</button>
+            <button @click="logout">退出登录</button>
+          </div>
+        </template>
+        <template v-else>
+          <router-link to="/login">登录</router-link>
+        </template>
+      </div>
     </header>
+
+    <!-- 未登录提示 -->
+    <div v-if="!isLoggedIn" class="not-logged-in">
+      ⚠️ 您未登录，会话不会被存储
+    </div>
 
     <!-- 聊天窗口 -->
     <div class="chat-container" ref="chatContainer">
@@ -18,7 +35,6 @@
 
     <!-- 输入区域 -->
     <div class="chat-input-area">
-      <!-- 文件上传按钮 -->
       <button @click="triggerFileInput">上传文件</button>
       <input
         ref="fileInput"
@@ -49,13 +65,14 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from "vue";
+import { ref, nextTick, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import axios from "axios";
 
+const router = useRouter();
 const inputText = ref("");
 const messages = ref([]);
-const selectedFiles = ref([]); // 存储上传的文件
-
+const selectedFiles = ref([]);
 const prompts = ref([
   "您好，我最近情绪低落，不知道该怎么办",
   "我经常焦虑，晚上总是睡不好",
@@ -64,6 +81,20 @@ const prompts = ref([
 ]);
 
 const chatContainer = ref(null);
+const fileInput = ref(null);
+
+const user = ref({ id: null, username: "" });
+const isLoggedIn = ref(false);
+const showUserMenu = ref(false);
+
+// 检查登录状态
+onMounted(() => {
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  if (storedUser) {
+    user.value = storedUser;
+    isLoggedIn.value = true;
+  }
+});
 
 const scrollToBottom = () => {
   nextTick(() => {
@@ -73,18 +104,14 @@ const scrollToBottom = () => {
   });
 };
 
-// 点击提示词只填入输入框
 const fillPrompt = (prompt) => {
   inputText.value = prompt;
 };
 
-// ✅ 触发隐藏的文件输入框
-const fileInput = ref(null);
 const triggerFileInput = () => {
   fileInput.value.click();
 };
 
-// ✅ 处理文件上传
 const handleFileUpload = (event) => {
   const files = event.target.files;
   if (files && files.length > 0) {
@@ -95,34 +122,27 @@ const handleFileUpload = (event) => {
   }
 };
 
-// ✅ 发送消息（根据是否有文件自动选择接口）
 const sendQuestion = async () => {
   if (!inputText.value && selectedFiles.value.length === 0) return;
 
   messages.value.push({ role: "用户", text: inputText.value || "（发送文件）" });
   scrollToBottom();
 
+
   try {
     let res;
-
     if (selectedFiles.value.length > 0) {
-      // 带文件：走 /ask_with_file
       const formData = new FormData();
       formData.append("text", inputText.value || "请分析这个文件");
-
-      selectedFiles.value.forEach((file) => {
-        formData.append("files", file);
-      });
+      selectedFiles.value.forEach((file) => formData.append("files", file));
 
       res = await axios.post("http://localhost:8000/ask_with_file", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // 清空文件
       selectedFiles.value = [];
       fileInput.value.value = "";
     } else {
-      // 普通文本：走 /ask
       res = await axios.post("http://localhost:8000/ask", {
         text: inputText.value,
       });
@@ -136,6 +156,21 @@ const sendQuestion = async () => {
 
   inputText.value = "";
   scrollToBottom();
+};
+
+// 导航栏操作
+const toggleUserMenu = () => {
+  showUserMenu.value = !showUserMenu.value;
+};
+
+const goToSettings = () => {
+  router.push("/settings");
+};
+
+const logout = () => {
+  localStorage.removeItem("user");
+  isLoggedIn.value = false;
+  user.value = { id: null, username: "" };
 };
 </script>
 
@@ -153,6 +188,30 @@ const sendQuestion = async () => {
   text-align: center;
   font-weight: bold;
   background-color: #a3d5ff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-right {
+  position: relative;
+}
+
+.user-menu {
+  position: absolute;
+  top: 24px;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.not-logged-in {
+  text-align: center;
+  color: #ff6600;
+  margin: 4px 0;
 }
 
 .chat-container {
