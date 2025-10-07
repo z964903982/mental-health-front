@@ -101,7 +101,11 @@
         </div>
 
         <!-- 聊天窗口 -->
-        <div class="chat-container" ref="chatContainer">
+        <div class="chat-container" ref="chatContainer" :class="{'expanded': !showQuickPrompts}">
+          <!-- 空白聊天框提示文字 -->
+          <div v-if="messages.length === 0" class="empty-chat-prompt">
+            您好，今天感觉怎么样？
+          </div>
           <div
             v-for="(msg, index) in messages"
             :key="index"
@@ -158,7 +162,7 @@
         </div>
 
         <!-- 快速提示 -->
-        <div class="quick-prompts">
+        <div class="quick-prompts" v-if="showQuickPrompts">
           <h3>常见问题</h3>
           <div class="prompts-container">
             <button
@@ -179,7 +183,7 @@
 <script setup>
 import './Chat.css'
 
-import { ref, nextTick, onMounted, computed } from "vue";
+import { ref, nextTick, onMounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 
@@ -187,6 +191,7 @@ const router = useRouter();
 const inputText = ref("");
 const messages = ref([]);
 const selectedFiles = ref([]);
+const showQuickPrompts = ref(true); // 控制是否显示常见问题区域
 const prompts = ref([
   "您好，我最近情绪低落，不知道该怎么办",
   "我经常焦虑，晚上总是睡不好",
@@ -281,6 +286,9 @@ const sendQuestion = async () => {
   if (!inputText.value) return;
   messages.value.push({ role: "用户", content: inputText.value });
   scrollToBottom();
+  
+  // 隐藏常见问题区域
+  showQuickPrompts.value = false;
 
   try {
     let res;

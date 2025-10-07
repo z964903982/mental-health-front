@@ -212,6 +212,33 @@ body,
     border-left: 3px solid var(--primary-color);
 }
 
+
+
+/* 空白聊天提示语样式 */
+.empty-chat-prompt {
+    display: flex;
+    justify-content: center;
+    /* 水平居中 */
+    align-items: center;
+    /* 垂直居中 */
+    height: 100%;
+    /* 占满整个聊天窗口 */
+    color: var(--light-text);
+    /* 提示文字颜色，可以淡一点 */
+    font-size: 24px;
+    /* 字体大小 */
+    font-weight: 500;
+    /* 字体粗细 */
+    text-align: center;
+    /* 多行文字居中 */
+    padding: 0 20px;
+    /* 左右内边距，防止文字紧贴边缘 */
+    pointer-events: none;
+    /* 防止影响鼠标事件 */
+}
+
+
+
 /* 聊天主区样式 */
 .chat-main {
     flex: 1;
@@ -391,15 +418,32 @@ body,
 }
 
 .send-btn {
-    background-color: var(--primary-color);
+    background-color: white;
 }
 
+/* 按钮悬停背景 */
 .send-btn:hover {
     background-color: #3dbdb5;
+    /* 可选：加深背景色 */
 }
 
 .send-btn svg {
     stroke: white;
+    /* 图标颜色 */
+    opacity: 1;
+    /* 保证图标可见 */
+    transition: transform 0.2s, opacity 0.2s, stroke 0.2s;
+    /* 动画过渡 */
+}
+
+/* 悬停效果 */
+.send-btn:hover svg {
+    transform: scale(1.2);
+    /* 放大 */
+    stroke: #D0F0EB;
+    /* 可以换成更亮的颜色或者渐变效果 */
+    opacity: 1;
+    /* 保证悬停时仍可见 */
 }
 
 .chat-input {
