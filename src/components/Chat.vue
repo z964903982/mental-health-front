@@ -18,6 +18,13 @@
           <path d="M21 21L16.65 16.65" stroke="#718096" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
+
+      <div class="nav-features">
+    <router-link to="/hotline" class="nav-btn hotline">咨询热线</router-link>
+    <router-link to="/test" class="nav-btn test">心理测试</router-link>
+    <router-link to="/mood" class="nav-btn mood">情绪日志</router-link>
+    <router-link to="/relax" class="nav-btn relax">放松训练</router-link>
+  </div>
       
       <div class="nav-right">
         <template v-if="isLoggedIn">
@@ -183,6 +190,10 @@
 <script setup>
 import './Chat.css'
 
+import { marked } from "marked";
+import DOMPurify from "dompurify";
+
+
 import { ref, nextTick, onMounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
@@ -209,6 +220,10 @@ const showUserMenu = ref(false);
 const sessions = ref([]);
 const currentSessionId = ref(null);
 const sessionCreatedInDB = ref(false); // 是否已保存到数据库
+
+const aiLoading = ref(false); // 是否正在加载AI回复
+const aiTypingIndex = ref(0); // 当前AI输出的字符索引
+
 
 // ------------------ 生命周期 ------------------
 onMounted(async () => {
@@ -272,9 +287,16 @@ const loadSession = async (session) => {
   if (isLoggedIn.value) {
     const res = await axios.get(`http://localhost:8080/api/chat/session/${session.id}`);
     messages.value = res.data.flatMap(log => [
-      { role: "用户", content: log.question },
-      { role: "AI", content: log.answer }
-    ]);
+  { 
+    role: "用户", 
+    content: DOMPurify.sanitize(marked.parse(log.question)) 
+  },
+  { 
+    role: "AI", 
+    content: DOMPurify.sanitize(marked.parse(log.answer)) 
+  }
+]);
+
   } else {
     messages.value = [];
   }
@@ -284,46 +306,76 @@ const loadSession = async (session) => {
 // ------------------ 发送消息 ------------------
 const sendQuestion = async () => {
   if (!inputText.value) return;
+
+  // 用户消息
   messages.value.push({ role: "用户", content: inputText.value });
   scrollToBottom();
-  
-  // 隐藏常见问题区域
   showQuickPrompts.value = false;
+
+  const questionText = inputText.value;
+  inputText.value = "";
+
+  // 显示加载动画
+  const loadingMessage = { role: "AI", content: "AI正在思考...", isLoading: true };
+  messages.value.push(loadingMessage);
+  aiLoading.value = true;
+  scrollToBottom();
 
   try {
     let res;
 
-    // 如果是临时会话，首次发送消息时创建DB记录
-    if (isLoggedIn.value && !sessionCreatedInDB.value) {
-      const createRes = await axios.post("http://localhost:8080/api/chat/session", null, {
-        params: { userId: user.value.id, title: inputText.value.slice(0,10) }
-      });
-      currentSessionId.value = createRes.data.id;
-      sessionCreatedInDB.value = true;
-      await loadSessions();
-    }
-
     if (isLoggedIn.value) {
+      if (!sessionCreatedInDB.value) {
+        const createRes = await axios.post("http://localhost:8080/api/chat/session", null, {
+          params: { userId: user.value.id, title: questionText.slice(0,10) }
+        });
+        currentSessionId.value = createRes.data.id;
+        sessionCreatedInDB.value = true;
+        await loadSessions();
+      }
       res = await axios.post("http://localhost:8080/api/chat/send", null, {
         params: {
           userId: user.value.id,
           sessionId: currentSessionId.value,
-          text: inputText.value,
+          text: questionText,
         },
       });
     } else {
-      res = await axios.post("http://localhost:8000/ask", { text: inputText.value });
+      res = await axios.post("http://localhost:8000/ask", { text: questionText });
     }
 
-    messages.value.push({ role: "AI", content: res.data.answer });
-    scrollToBottom();
+    // 渲染Markdown
+    const rawAnswer = res.data.answer || "AI未返回内容";
+    const safeHtml = DOMPurify.sanitize(marked.parse(rawAnswer));
+
+    // 移除加载动画
+    const loadingIdx = messages.value.findIndex(m => m.isLoading);
+    if (loadingIdx !== -1) messages.value.splice(loadingIdx, 1);
+
+    // 逐字输出
+    messages.value.push({ role: "AI", content: "" });
+    const newMsg = messages.value[messages.value.length - 1];
+    aiTypingIndex.value = 0;
+
+    function typeChar() {
+      if (aiTypingIndex.value < safeHtml.length) {
+        newMsg.content += safeHtml[aiTypingIndex.value];
+        aiTypingIndex.value++;
+        scrollToBottom();
+        setTimeout(typeChar, 20); // 逐字输出速度，20ms一个字符
+      } else {
+        aiLoading.value = false;
+      }
+    }
+    typeChar();
+
   } catch (error) {
     messages.value.push({ role: "系统", content: "❌ 问答服务出错了" });
     console.error(error);
+    aiLoading.value = false;
   }
-
-  inputText.value = "";
 };
+
 
 // ------------------ 导航栏 ------------------
 const toggleUserMenu = () => { showUserMenu.value = !showUserMenu.value; };

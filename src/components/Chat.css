@@ -28,12 +28,13 @@ body,
 /* 导航栏样式 */
 .navbar {
     padding: 12px 20px;
-    background-color: white;
+    background: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
     z-index: 10;
+    backdrop-filter: blur(8px);
 }
 
 .logo {
@@ -44,6 +45,68 @@ body,
     font-size: 18px;
     color: var(--dark-text);
 }
+
+/* ChatNav.css */
+.nav-features {
+    display: flex;
+    gap: 14px;
+    margin-left: 20px;
+}
+
+.nav-btn {
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-weight: 500;
+    color: #2D3748;
+    text-decoration: none;
+    background: white;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.25s ease;
+    backdrop-filter: blur(6px);
+}
+
+.nav-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 浅色柔和配色，带气泡感 */
+/* 🌸浅色柔和配色，带气泡感 */
+.nav-btn.hotline {
+    background: linear-gradient(135deg, #FFECEC 0%, #FFF5F5 100%);
+}
+
+.nav-btn.test {
+    background: linear-gradient(135deg, #F4E9FF 0%, #FAF5FF 100%);
+}
+
+/* 🩵情绪日志：清新蓝绿色调 */
+.nav-btn.mood {
+    background: linear-gradient(135deg, #E3F6FF 0%, #F0FBFF 100%);
+}
+
+/* 💚放松训练：浅绿色调 */
+.nav-btn.relax {
+    background: linear-gradient(135deg, #E5FFF3 0%, #F3FFF9 100%);
+}
+
+/* 🌈鼠标悬停时让颜色更亮一点，有轻柔浮动感 */
+.nav-btn.hotline:hover {
+    background: linear-gradient(135deg, #FFD8D8 0%, #FFF0F0 100%);
+}
+
+.nav-btn.test:hover {
+    background: linear-gradient(135deg, #E9D8FD 0%, #F6EDFF 100%);
+}
+
+.nav-btn.mood:hover {
+    background: linear-gradient(135deg, #D6F3FF 0%, #EBFAFF 100%);
+}
+
+.nav-btn.relax:hover {
+    background: linear-gradient(135deg, #D9FFEF 0%, #EDFFF8 100%);
+}
+
 
 .search-bar {
     display: flex;
@@ -349,6 +412,7 @@ body,
     border-radius: 18px;
     padding: 12px 16px;
     position: relative;
+
 }
 
 .chat-message.user .message-bubble {
