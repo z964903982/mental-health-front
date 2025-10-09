@@ -20,10 +20,8 @@
       </div>
 
       <div class="nav-features">
-    <router-link to="/hotline" class="nav-btn hotline">咨询热线</router-link>
-    <router-link to="/test" class="nav-btn test">心理测试</router-link>
-    <router-link to="/mood" class="nav-btn mood">情绪日志</router-link>
-    <router-link to="/relax" class="nav-btn relax">放松训练</router-link>
+    <router-link to="/" class="nav-text">首页</router-link>
+    <router-link to="/chat" class="nav-text">开始问答</router-link>
   </div>
       
       <div class="nav-right">
@@ -188,7 +186,9 @@
 </template>
 
 <script setup>
-import './Chat.css'
+import '@/assets/css/Chat.css'
+
+
 
 import { marked } from "marked";
 import DOMPurify from "dompurify";

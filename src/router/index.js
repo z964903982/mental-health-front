@@ -1,12 +1,15 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import Chat from '@/components/Chat.vue'
+import Chat from '@/views/Chat.vue'
 import Login from '@/views/Login.vue'
 import Register from '@/views/Register.vue'
+import Home from '@/views/Home.vue'
+
 // import Settings from '@/views/Settings.vue' // 如果还没创建，先注释
 
 const routes = [
-  { path: '/', component: Chat }, // 首页
+  { path: '/', component: Home }, // 首页现在是 Home.vue
+  { path: '/chat', component: Chat }, // 如果还想保留聊天页
   { path: '/login', component: Login },
   { path: '/register', component: Register },
   // { path: '/settings', component: Settings },
