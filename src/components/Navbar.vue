@@ -1,0 +1,254 @@
+<!-- src/components/Navbar.vue -->
+<template>
+    <div class="navbar">
+      <!-- 左侧 Logo -->
+      <div class="logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L3 7V17L12 22L21 17V7L12 2Z" stroke="#4ECDC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 8V16" stroke="#4ECDC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 12H16" stroke="#4ECDC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>心理健康咨询小助手</span>
+      </div>
+  
+      <!-- 中间呼吸灯插槽 -->
+      <div class="navbar-center">
+        <slot name="center-controls"></slot>
+      </div>
+  
+     
+  
+      <!-- 右侧用户信息 -->
+      <div class="nav-right">
+         <!-- 中间导航 -->
+      <div class="nav-features">
+        <router-link to="/" class="nav-text">首页</router-link>
+        <router-link to="/chat" class="nav-text">开始问答</router-link>
+      </div>
+        <template v-if="userStore.isLoggedIn">
+          <div class="user-profile" @click="toggleUserMenu">
+            <div class="avatar">{{ userStore.user.username.charAt(0) }}</div>
+            <span>{{ userStore.user.username }}</span>
+          </div>
+          <div v-if="showUserMenu" class="user-menu">
+            <button @click="$router.push('/settings')">设置</button>
+            <button @click="userStore.logout()">退出登录</button>
+          </div>
+        </template>
+        <template v-else>
+          <router-link to="/login" class="login-btn">登录</router-link>
+        </template>
+      </div>
+    </div>
+  </template>
+  
+  <script setup>
+  import { ref } from 'vue'
+  import { useUserStore } from '@/stores/user'
+  
+  const userStore = useUserStore()
+  userStore.loadUserFromStorage()
+  
+  const showUserMenu = ref(false)
+  function toggleUserMenu() {
+    showUserMenu.value = !showUserMenu.value
+  }
+  </script>
+  
+  
+  <style scoped>
+  
+/* 导航栏样式 - 复用Chat.css */
+.navbar {
+  position: relative; /* 为绝对定位提供参考 */
+  padding: 12px 20px;
+  background: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+
+.navbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--dark-text);
+}
+
+.nav-features {
+    display: flex;
+    gap: 14px;
+    margin-left: 20px;
+}
+
+.nav-btn {
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-weight: 500;
+    color: #2D3748;
+    text-decoration: none;
+    background: white;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.25s ease;
+    backdrop-filter: blur(6px);
+}
+
+.nav-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.nav-btn.hotline {
+    background: linear-gradient(135deg, #FFECEC 0%, #FFF5F5 100%);
+}
+
+.nav-btn.test {
+    background: linear-gradient(135deg, #F4E9FF 0%, #FAF5FF 100%);
+}
+
+.nav-btn.mood {
+    background: linear-gradient(135deg, #E3F6FF 0%, #F0FBFF 100%);
+}
+
+.nav-btn.relax {
+    background: linear-gradient(135deg, #E5FFF3 0%, #F3FFF9 100%);
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background-color: var(--light-bg);
+    border-radius: 20px;
+    padding: 6px 12px;
+    width: 300px;
+    position: relative;
+}
+
+.search-bar input {
+    border: none;
+    background: transparent;
+    width: 100%;
+    padding: 6px;
+    outline: none;
+    color: var(--dark-text);
+}
+
+.search-bar svg {
+    position: absolute;
+    right: 12px;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* 链接和头像间距 */
+}
+
+.nav-links {
+  display: flex;
+  gap: 14px;
+}
+
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 20px;
+    transition: background-color 0.2s;
+}
+
+.user-profile:hover {
+    background-color: var(--hover-color);
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #805AD5;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.user-menu {
+    position: absolute;
+    top: 48px;
+    right: 0;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+    z-index: 100;
+}
+
+.user-menu button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    color: var(--dark-text);
+}
+
+.user-menu button:hover {
+    background-color: var(--hover-color);
+}
+
+.login-btn {
+    padding: 8px 16px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.login-btn:hover {
+    background-color: #3dbdb5;
+}
+
+.nav-text {
+    margin: 0 10px;
+    cursor: pointer;
+    color: #4ECDC4;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.nav-text:hover {
+    color: #FF6B6B;
+}
+
+
+  </style>
+  

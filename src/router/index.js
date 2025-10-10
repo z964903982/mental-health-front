@@ -4,6 +4,7 @@ import Chat from '@/views/Chat.vue'
 import Login from '@/views/Login.vue'
 import Register from '@/views/Register.vue'
 import Home from '@/views/Home.vue'
+import ChinaMap from '@/components/ChinaMap.vue'  // 导入新组件
 
 // import Settings from '@/views/Settings.vue' // 如果还没创建，先注释
 
@@ -13,6 +14,7 @@ const routes = [
   { path: '/login', component: Login },
   { path: '/register', component: Register },
   // { path: '/settings', component: Settings },
+  { path: '/hotline', name: 'Hotline', component: ChinaMap },
 ]
 
 const router = createRouter({

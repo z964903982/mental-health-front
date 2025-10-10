@@ -1,46 +1,14 @@
 <template>
   <div class="chat-app">
     <!-- 导航栏 -->
-    <div class="navbar">
-      <div class="logo">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2L3 7V17L12 22L21 17V7L12 2Z" stroke="#4ECDC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M12 8V16" stroke="#4ECDC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M8 12H16" stroke="#4ECDC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span>心理健康助手</span>
-      </div>
-      
-      <div class="search-bar">
-        <input type="text" placeholder="搜索会话..." />
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="#718096" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M21 21L16.65 16.65" stroke="#718096" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
+    <Navbar>
+  <template #center-controls>
+    <BreathingCard :showBreathing="showBreathing" :rhythm="selectedRhythm" ref="breathingCard" />
 
-      <div class="nav-features">
-    <router-link to="/" class="nav-text">首页</router-link>
-    <router-link to="/chat" class="nav-text">开始问答</router-link>
-  </div>
-      
-  <div class="nav-right">
-  <template v-if="userStore.isLoggedIn">
-    <div class="user-profile" @click="showUserMenu = !showUserMenu">
-      <div class="avatar">{{ userStore.user.username.charAt(0) }}</div>
-      <span>{{ userStore.user.username }}</span>
-    </div>
-    <div v-if="showUserMenu" class="user-menu">
-      <button @click="$router.push('/settings')">设置</button>
-      <button @click="userStore.logout()">退出登录</button>
-    </div>
   </template>
-  <template v-else>
-    <router-link to="/login" class="login-btn">登录</router-link>
-  </template>
-</div>
+</Navbar>
 
-    </div>
+
 
     <!-- 主体内容 -->
     <div class="chat-body">
@@ -172,19 +140,20 @@
 
 <script setup>
 import '@/assets/css/Chat.css'
-
-import { useUserStore } from '@/stores/user';
-const userStore = useUserStore();
-userStore.loadUserFromStorage();
-
-
-import { marked } from "marked";
-import DOMPurify from "dompurify";
-
+import Navbar from '@/components/Navbar.vue'
+import BreathingCard from '@/components/BreathingCard.vue'
 
 import { ref, nextTick, onMounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
+
+import { useUserStore } from '@/stores/user';
+const userStore = useUserStore();  // ✅ 这里创建实例
+userStore.loadUserFromStorage();   // 如果你想立即从 localStorage 加载用户数据
+
+import { marked } from "marked";
+import DOMPurify from "dompurify";
+
 
 const router = useRouter();
 const inputText = ref("");
@@ -212,6 +181,38 @@ const sessionCreatedInDB = ref(false); // 是否已保存到数据库
 
 const aiLoading = ref(false); // 是否正在加载AI回复
 const aiTypingIndex = ref(0); // 当前AI输出的字符索引
+
+const emotionToRhythm = {
+  happy: 'deep',
+  neutral: 'slow',
+  anxious: '478',
+  stressed: 'box',
+  angry: 'box',   // 添加 angry 对应呼吸节奏
+  tired: 'alternate',
+  excited: 'stimulate',
+  sad: '478'
+  
+};
+
+const emotionToChinese = {
+  happy: '高兴',
+  neutral: '平静',
+  anxious: '焦虑',
+  stressed: '紧张',
+  angry: '生气',
+  sad: '难过',
+  tired: '疲惫',
+  excited: '兴奋',
+  sad: '难过'
+};
+
+
+
+const showBreathing = ref(true); // 是否显示呼吸灯
+const selectedRhythm = ref('slow'); // 当前呼吸模式
+
+
+
 
 
 // ------------------ 生命周期 ------------------
@@ -334,29 +335,44 @@ const sendQuestion = async () => {
     }
 
     // 渲染Markdown
-    const rawAnswer = res.data.answer || "AI未返回内容";
-    const safeHtml = DOMPurify.sanitize(marked.parse(rawAnswer));
+const rawAnswer = res.data.answer || "AI未返回内容";
+const safeHtml = DOMPurify.sanitize(marked.parse(rawAnswer));
 
-    // 移除加载动画
-    const loadingIdx = messages.value.findIndex(m => m.isLoading);
-    if (loadingIdx !== -1) messages.value.splice(loadingIdx, 1);
+// 移除加载动画
+const loadingIdx = messages.value.findIndex(m => m.isLoading);
+if (loadingIdx !== -1) messages.value.splice(loadingIdx, 1);
 
-    // 逐字输出
-    messages.value.push({ role: "AI", content: "" });
-    const newMsg = messages.value[messages.value.length - 1];
-    aiTypingIndex.value = 0;
+// 逐字输出
+messages.value.push({ role: "AI", content: "" });
+const newMsg = messages.value[messages.value.length - 1];
+aiTypingIndex.value = 0;
 
-    function typeChar() {
-      if (aiTypingIndex.value < safeHtml.length) {
-        newMsg.content += safeHtml[aiTypingIndex.value];
-        aiTypingIndex.value++;
-        scrollToBottom();
-        setTimeout(typeChar, 20); // 逐字输出速度，20ms一个字符
-      } else {
-        aiLoading.value = false;
-      }
-    }
-    typeChar();
+function typeChar() {
+  if (aiTypingIndex.value < safeHtml.length) {
+    newMsg.content += safeHtml[aiTypingIndex.value];
+    aiTypingIndex.value++;
+    scrollToBottom();
+    setTimeout(typeChar, 20);
+  } else {
+    aiLoading.value = false;
+
+    // ✅ 根据 AI 情绪切换呼吸模式
+const aiEmotion = res.data.emotion || 'neutral';
+// 只在负面情绪时切换
+const triggerEmotions = ['sad', 'angry', 'anxious', 'stressed'];
+if (triggerEmotions.includes(aiEmotion) && emotionToRhythm[aiEmotion]) {
+  selectedRhythm.value = emotionToRhythm[aiEmotion];
+  showBreathing.value = true;
+  messages.value.push({ 
+    role: '系统', 
+    content: `💡 系统察觉到您的情绪（${emotionToChinese[aiEmotion]}），已为您切换了呼吸模式，请您跟随呼吸灯慢慢放松~` 
+  });
+  scrollToBottom();
+}
+
+  }
+}
+typeChar();
 
   } catch (error) {
     messages.value.push({ role: "系统", content: "❌ 问答服务出错了" });
