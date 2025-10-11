@@ -29,14 +29,14 @@
         <!-- 三个模块横向排列 -->
         <div class="three-modules">
           <el-card class="module-card" @click="goToHotline">
-  <h3>咨询热线</h3>
+  <h3>心理咨询热线</h3>
   <p>点击获取热线信息</p>
 </el-card>
 
           <el-card class="module-card">
             <h3>心理测试</h3>
             <p>完成心理测试，了解心理健康状况</p>
-            <el-button type="primary" size="small">开始测试</el-button>
+            <el-button type="primary" size="small" @click="goToScales">开始测试</el-button>
           </el-card>
 
           <el-card class="module-card">
@@ -110,6 +110,10 @@ const showUserMenu = ref(false)
 
 function goToHotline() {
   router.push('/hotline')
+}
+
+function goToScales() {
+  router.push('/scales')
 }
 
 </script>

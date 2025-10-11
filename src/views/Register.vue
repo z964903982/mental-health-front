@@ -1,18 +1,36 @@
 <template>
-  <div class="register-container">
-    <h2>用户注册</h2>
-    <form @submit.prevent="handleRegister">
-      <input v-model="account" placeholder="账号（登录用）" required />
-      <input v-model="username" placeholder="昵称" required />
-      <input v-model="password" type="password" placeholder="密码" required />
-      <input v-model="email" placeholder="邮箱（可选）" />
-      <button type="submit">注册</button>
-    </form>
-    <p>{{ message }}</p>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h2 class="auth-title">用户注册</h2>
+        <p class="auth-subtitle">欢迎加入，请填写您的信息</p>
+      </div>
+
+      <el-form label-position="top" @submit.prevent>
+        <el-form-item label="账号（登录用）">
+          <el-input v-model="account" placeholder="请输入账号" />
+        </el-form-item>
+        <el-form-item label="昵称">
+          <el-input v-model="username" placeholder="请输入昵称" />
+        </el-form-item>
+        <el-form-item label="密码">
+          <el-input v-model="password" type="password" placeholder="请输入密码" />
+        </el-form-item>
+        <el-form-item label="邮箱（可选）">
+          <el-input v-model="email" placeholder="请输入邮箱" />
+        </el-form-item>
+        <div class="auth-actions">
+          <el-button type="primary" class="btn-primary" @click="handleRegister">注册</el-button>
+        </div>
+      </el-form>
+
+      <p class="text-muted" v-if="message">{{ message }}</p>
+    </div>
   </div>
 </template>
 
 <script setup>
+import '@/assets/css/Auth.css'
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { registerUser } from '@/api/user';
@@ -55,14 +73,4 @@ async function handleRegister() {
   }
 }
 </script>
-
-<style scoped>
-.register-container {
-  max-width: 300px;
-  margin: 100px auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-</style>
 s

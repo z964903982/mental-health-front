@@ -5,6 +5,8 @@ import Login from '@/views/Login.vue'
 import Register from '@/views/Register.vue'
 import Home from '@/views/Home.vue'
 import ChinaMap from '@/components/ChinaMap.vue'  // 导入新组件
+import AdminTests from '@/views/AdminTests.vue'
+import Scales from '@/views/Scales.vue'
 
 // import Settings from '@/views/Settings.vue' // 如果还没创建，先注释
 
@@ -15,6 +17,8 @@ const routes = [
   { path: '/register', component: Register },
   // { path: '/settings', component: Settings },
   { path: '/hotline', name: 'Hotline', component: ChinaMap },
+  { path: '/admin', name: 'AdminTests', component: AdminTests },
+  { path: '/scales', name: 'Scales', component: Scales },
 ]
 
 const router = createRouter({

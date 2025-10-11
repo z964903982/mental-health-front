@@ -1,0 +1,63 @@
+/* 登录与注册页统一风格 */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: var(--bg-gradient);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+  padding: 28px;
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.09);
+}
+
+.auth-header {
+  margin-bottom: 12px;
+}
+.auth-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--dark-text);
+  margin: 0;
+}
+.auth-subtitle {
+  margin-top: 6px;
+  color: var(--light-text);
+}
+
+.auth-actions {
+  margin-top: 12px;
+}
+.auth-actions .el-button {
+  width: 100%;
+}
+
+.auth-footer {
+  margin-top: 16px;
+  text-align: center;
+  color: var(--light-text);
+}
+.auth-footer a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+.auth-footer a:hover {
+  color: var(--primary-color-600);
+}
+
+/* 角色切换 */
+.role-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--light-text);
+}

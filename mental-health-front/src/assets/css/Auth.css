@@ -1,0 +1,91 @@
+/* 统一登录与注册主题样式（不改动原布局结构） */
+:root {
+  --primary-color: #4ECDC4;
+  --secondary-color: #FF6B6B;
+  --light-bg: #F7FAFC;
+  --dark-text: #2D3748;
+  --light-text: #718096;
+  --border-color: #E2E8F0;
+  --hover-color: #EDF2F7;
+}
+
+/* 页面背景尽量柔和且不抢眼 */
+body {
+  background:
+    radial-gradient(1200px circle at 12% 8%, rgba(78,205,196,0.06) 0%, transparent 60%),
+    radial-gradient(800px circle at 88% 30%, rgba(255,107,107,0.06) 0%, transparent 60%),
+    var(--light-bg);
+}
+
+.login-container,
+.register-container {
+  width: 360px;
+  margin: 100px auto;
+  padding: 20px 18px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--dark-text);
+}
+
+.login-container h2,
+.register-container h2 {
+  margin: 0 0 4px 0;
+  font-weight: 600;
+}
+
+/* 输入与按钮的主题化 */
+.login-container input,
+.register-container input {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 10px 12px;
+  outline: none;
+}
+.login-container input:focus,
+.register-container input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(78,205,196,0.15);
+}
+
+.login-container button[type="submit"],
+.register-container button[type="submit"],
+.login-container button,
+.register-container button {
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.login-container button:hover,
+.register-container button:hover {
+  background: #3dbdb5;
+}
+
+/* 提示/链接更柔和 */
+.login-container p,
+.register-container p {
+  color: var(--light-text);
+}
+.login-container a,
+.register-container a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+.login-container a:hover,
+.register-container a:hover {
+  color: var(--secondary-color);
+}
+
+@media (max-width: 420px) {
+  .login-container,
+  .register-container {
+    width: 90%;
+    margin-top: 40px;
+  }
+}

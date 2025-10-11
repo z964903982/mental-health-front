@@ -1,26 +1,45 @@
 <template>
-  <div class="login-container">
-    <h2>{{ isAdmin ? "管理员登录" : "用户登录" }}</h2>
-    <form @submit.prevent="handleLogin">
-      <input v-model="account" placeholder="账号" required />
-      <input v-model="password" type="password" placeholder="密码" required />
-      <button type="submit">登录</button>
-    </form>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h2 class="auth-title">{{ isAdmin ? "管理员登录" : "用户登录" }}</h2>
+        <p class="auth-subtitle">欢迎回来，请使用您的账号登录</p>
+      </div>
 
-    <button @click="toggleRole">
-      切换到{{ isAdmin ? "用户" : "管理员" }}登录
-    </button>
+      <div class="role-toggle">
+        <span>登录身份：</span>
+        <el-switch
+          v-model="isAdmin"
+          inline-prompt
+          active-text="管理员"
+          inactive-text="用户"
+        />
+      </div>
 
-    <p>
-      还没有账号？ 
-      <router-link to="/register">去注册</router-link>
-    </p>
+      <el-form label-position="top" @submit.prevent>
+        <el-form-item label="账号">
+          <el-input v-model="account" placeholder="请输入账号" />
+        </el-form-item>
+        <el-form-item label="密码">
+          <el-input v-model="password" type="password" placeholder="请输入密码" />
+        </el-form-item>
+        <div class="auth-actions">
+          <el-button type="primary" class="btn-primary" @click="handleLogin">登录</el-button>
+        </div>
+      </el-form>
 
-    <p>{{ message }}</p>
+      <div class="auth-footer">
+        还没有账号？ <router-link to="/register">去注册</router-link>
+      </div>
+
+      <p class="text-muted" v-if="message">{{ message }}</p>
+    </div>
   </div>
+  
 </template>
 
 <script setup>
+import '@/assets/css/Auth.css'
 import { ref } from "vue";
 import { loginUser, adminLogin } from "@/api/user";
 import { useRouter } from "vue-router";
@@ -72,13 +91,3 @@ async function handleLogin() {
   }
 }
 </script>
-
-<style scoped>
-.login-container {
-  max-width: 300px;
-  margin: 100px auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-</style>
